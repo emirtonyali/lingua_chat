@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Release APK'nın internete (Supabase + Gemini) erişebilmesi için gerekli. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="lingua_chat"
         android:name="${applicationName}"
