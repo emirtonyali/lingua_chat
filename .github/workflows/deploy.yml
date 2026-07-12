@@ -1,0 +1,62 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # config.dart depoya girmiyor (gitignore). Gizli anahtarlardan üretiyoruz.
+      - name: Generate lib/config.dart from secrets
+        run: |
+          cat > lib/config.dart <<'EOF'
+          class Config {
+            static const String supabaseUrl = '${{ secrets.SUPABASE_URL }}';
+            static const String supabaseAnonKey = '${{ secrets.SUPABASE_ANON_KEY }}';
+            static const String geminiApiKey = '${{ secrets.GEMINI_API_KEY }}';
+            static const String geminiModel = 'gemini-2.0-flash';
+            static bool get isSupabaseConfigured =>
+                supabaseUrl.startsWith('http') &&
+                supabaseAnonKey.isNotEmpty &&
+                !supabaseAnonKey.startsWith('BURAYA');
+            static bool get isGeminiConfigured =>
+                geminiApiKey.isNotEmpty && !geminiApiKey.startsWith('BURAYA');
+          }
+          EOF
+
+      - run: flutter pub get
+
+      # base-href, depo adına göre otomatik ayarlanır (ör. /lingua_chat/).
+      - run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
