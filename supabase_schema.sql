@@ -149,3 +149,4 @@ create policy msg_update on public.messages
 alter publication supabase_realtime add table public.messages;
 alter publication supabase_realtime add table public.chats;
 alter publication supabase_realtime add table public.friend_requests;
+alter publication supabase_realtime add table public.friendships;

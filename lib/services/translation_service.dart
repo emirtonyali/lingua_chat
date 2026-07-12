@@ -43,14 +43,16 @@ class TranslationService {
       targetLang: targetLang,
     );
 
-    // Cache'i güncelle (hata olsa da çeviriyi yine döndürürüz).
-    try {
-      final updated = Map<String, String>.from(message.translations)
-        ..[targetLang] = translated;
-      await _client
-          .from('messages')
-          .update({'translations': updated}).eq('id', message.id);
-    } catch (_) {}
+    // Cache'i arka planda güncelle — BEKLEMEDEN çeviriyi hemen döndür.
+    // (Bir sonraki açılışta cache'ten anında gelir.)
+    final updated = Map<String, String>.from(message.translations)
+      ..[targetLang] = translated;
+    _client
+        .from('messages')
+        .update({'translations': updated})
+        .eq('id', message.id)
+        .then((_) {})
+        .catchError((_) {});
 
     return translated;
   }
@@ -65,10 +67,8 @@ class TranslationService {
       '${Config.geminiModel}:generateContent?key=${Config.geminiApiKey}',
     );
 
-    final prompt = 'Translate the following chat message into $targetName. '
-        'Preserve the tone, slang and emojis. '
-        'Return ONLY the translation, with no quotes, no explanation, '
-        'no extra text.\n\nMessage:\n$text';
+    final prompt = 'Translate to $targetName. Keep tone, slang, emojis. '
+        'Output ONLY the translation:\n$text';
 
     final body = jsonEncode({
       'contents': [
@@ -78,7 +78,10 @@ class TranslationService {
           ]
         }
       ],
-      'generationConfig': {'temperature': 0.3},
+      'generationConfig': {
+        'temperature': 0.3,
+        'maxOutputTokens': 512,
+      },
     });
 
     http.Response resp;
