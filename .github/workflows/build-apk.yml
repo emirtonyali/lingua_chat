@@ -1,0 +1,54 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      # config.dart depoya girmiyor (gitignore). Gizli anahtarlardan üretiyoruz.
+      - name: Generate lib/config.dart from secrets
+        run: |
+          cat > lib/config.dart <<'EOF'
+          class Config {
+            static const String supabaseUrl = '${{ secrets.SUPABASE_URL }}';
+            static const String supabaseAnonKey = '${{ secrets.SUPABASE_ANON_KEY }}';
+            static const String geminiApiKey = '${{ secrets.GEMINI_API_KEY }}';
+            static const String geminiModel = 'gemini-flash-latest';
+            static bool get isSupabaseConfigured =>
+                supabaseUrl.startsWith('http') &&
+                supabaseAnonKey.isNotEmpty &&
+                !supabaseAnonKey.startsWith('BURAYA');
+            static bool get isGeminiConfigured =>
+                geminiApiKey.isNotEmpty && !geminiApiKey.startsWith('BURAYA');
+          }
+          EOF
+
+      - run: flutter pub get
+
+      - run: flutter build apk --release
+
+      # APK'yı indirilebilir bir Release olarak yayınla (telefondan da açılır).
+      - name: Publish APK to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: LinguaChat Android (son sürüm)
+          files: build/app/outputs/flutter-apk/app-release.apk
