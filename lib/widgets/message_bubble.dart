@@ -33,8 +33,9 @@ class _MessageBubbleState extends State<MessageBubble> {
   bool _showTranslation = false;
   String? _error;
 
-  bool get _needsTranslation =>
-      !widget.isMine && widget.message.originalLanguage != widget.myLanguage;
+  // Gelen (bana ait olmayan) her mesajda çeviri seçeneği sunulur.
+  // Gönderenin dil bilgisine güvenmiyoruz; kullanıcı istediğinde çevirir.
+  bool get _needsTranslation => !widget.isMine;
 
   @override
   void initState() {

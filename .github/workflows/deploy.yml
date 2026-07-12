@@ -32,7 +32,7 @@ jobs:
             static const String supabaseUrl = '${{ secrets.SUPABASE_URL }}';
             static const String supabaseAnonKey = '${{ secrets.SUPABASE_ANON_KEY }}';
             static const String geminiApiKey = '${{ secrets.GEMINI_API_KEY }}';
-            static const String geminiModel = 'gemini-2.0-flash';
+            static const String geminiModel = 'gemini-flash-latest';
             static bool get isSupabaseConfigured =>
                 supabaseUrl.startsWith('http') &&
                 supabaseAnonKey.isNotEmpty &&

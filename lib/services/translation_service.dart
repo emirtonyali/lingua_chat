@@ -24,10 +24,8 @@ class TranslationService {
     required Message message,
     required String targetLang,
   }) async {
-    if (message.originalLanguage == targetLang) {
-      return message.text;
-    }
-
+    // Not: Gönderenin "orijinal dil" bilgisi güvenilir olmadığından burada
+    // kısayol yapmıyoruz; kullanıcı çeviri istedi, Gemini'ye bırakıyoruz.
     final cached = message.translations[targetLang];
     if (cached != null && cached.isNotEmpty) {
       return cached;
